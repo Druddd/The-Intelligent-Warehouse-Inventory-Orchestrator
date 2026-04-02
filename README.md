@@ -10,8 +10,7 @@ The frontend was built using Lovable, a vibecoding platform for rapid UI develop
 It provides a clean and responsive dashboard for warehouse operations and an AI chat interface.
 
 Live App:
-https://pack-pilot-ai.lovable.app
-
+https://globallogisticscorp.lovable.app
 ---
 
 ## ⚙️ Features
