@@ -1,0 +1,250 @@
+{
+  "name": "Inventory operation inbound",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "item_name",
+              "value": "={{ $json.body.item_name }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "quantity",
+              "value": "={{ $json.body.quantity }}",
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "85bee6f3-e53e-4c59-99f0-9eb1bfaf97d5",
+      "name": "Prepare Inbound Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "inventory",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "item_name",
+              "keyValue": "={{ $json.item_name }}"
+            }
+          ]
+        }
+      },
+      "id": "0232485b-93d7-48ce-b75b-d9a51729a7bc",
+      "name": "Get Current Stock",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "IpL5LE8KCjPQexZz",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "inventory",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "item_name",
+              "condition": "eq",
+              "keyValue": "={{ $json.item_name }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "stock_level",
+              "fieldValue": "={{ $(\"Get Current Stock\").item.json.stock_level + $(\"Prepare Inbound Data\").item.json.quantity }}"
+            }
+          ]
+        }
+      },
+      "id": "c9cc2300-3589-4231-b3cc-4e1666ec8f86",
+      "name": "Update Stock Level",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "IpL5LE8KCjPQexZz",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "order_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "item_name",
+              "fieldValue": "={{ $json.item_name }}"
+            },
+            {
+              "fieldId": "action (inbound/outbound)",
+              "fieldValue": "inbound"
+            },
+            {
+              "fieldId": "timestamp",
+              "fieldValue": "={{ $(\"Prepare Inbound Data\").item.json.timestamp }}"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "={{ $json.category }}"
+            },
+            {
+              "fieldId": "price",
+              "fieldValue": "={{ $json.price }}"
+            }
+          ]
+        }
+      },
+      "id": "b720d775-50e8-4b17-a075-a524c4e5e006",
+      "name": "Log Inbound Operation",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "IpL5LE8KCjPQexZz",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Inbound operation completed\", \"item_id\": $(\"Prepare Inbound Data\").item.json.item_id, \"quantity_added\": $(\"Prepare Inbound Data\").item.json.quantity, \"new_stock_level\": $(\"Update Stock Level\").item.json.stock_level } }}",
+        "options": {}
+      },
+      "id": "77fd1ac8-7aee-4470-a1cb-d8f13e55f1c1",
+      "name": "Respond Inbound Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "warehouse-inventory",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "07942b63-d11a-4b8f-92a5-ecaba07775b0",
+      "name": "Inventory Operations Webhook2",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "da16d8f0-2d6b-4fb0-8979-7d580b961907"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prepare Inbound Data": {
+      "main": [
+        [
+          {
+            "node": "Get Current Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Current Stock": {
+      "main": [
+        [
+          {
+            "node": "Update Stock Level",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Stock Level": {
+      "main": [
+        [
+          {
+            "node": "Log Inbound Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Inbound Operation": {
+      "main": [
+        [
+          {
+            "node": "Respond Inbound Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inventory Operations Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Prepare Inbound Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5471cdad-a30c-4e50-a081-4ef1b5702bd6",
+  "meta": {
+    "instanceId": "065a8777d7a5ad284d960dc01e271936effce2dfb56aac10dbd8d27aab25fdc3"
+  },
+  "id": "DmoaumLKJVAQCXcB",
+  "tags": []
+}

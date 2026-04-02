@@ -1,0 +1,95 @@
+{
+  "name": "Inventory Health",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "warehouse-inventory",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b4e89830-c529-4442-bf42-ac58f8a50635",
+      "name": "Inventory Operations Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        736
+      ],
+      "webhookId": "47be127a-d9e8-464c-85d5-aaf91ba3b73d"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "inventory",
+        "returnAll": true,
+        "filterType": "string",
+        "filterString": "stock_level.lt.reorder_point"
+      },
+      "id": "5ffdfc80-79d1-4f95-bbe3-4964490868ab",
+      "name": "Get Low Stock Items",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        736
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "IpL5LE8KCjPQexZz",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"low_stock_items\": $(\"Get Low Stock Items\").all().map(item => ({ \"item_id\": item.json.item_id, \"item_name\": item.json.item_name, \"stock_level\": item.json.stock_level, \"reorder_point\": item.json.reorder_point, \"supplier\": item.json.supplier })), \"count\": $(\"Get Low Stock Items\").all().length } }}",
+        "options": {}
+      },
+      "id": "d549beb0-ad22-4a51-90ed-fb318f900e95",
+      "name": "Respond Health Check",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        448,
+        736
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Inventory Operations Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Low Stock Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Low Stock Items": {
+      "main": [
+        [
+          {
+            "node": "Respond Health Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f94b2245-a4c2-43ce-a1af-ee408df73587",
+  "meta": {
+    "instanceId": "065a8777d7a5ad284d960dc01e271936effce2dfb56aac10dbd8d27aab25fdc3"
+  },
+  "id": "h9XDNZmC4Xyf81w3",
+  "tags": []
+}

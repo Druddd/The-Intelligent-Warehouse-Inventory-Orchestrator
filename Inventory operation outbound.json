@@ -1,0 +1,389 @@
+{
+  "name": "Inventory operation outbound",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "item_name",
+              "value": "={{ $json.body.item_name }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "quantity",
+              "value": "={{ $json.body.quantity }}",
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dd3ff1a1-6d25-4bef-b935-e5b062abb1ca",
+      "name": "Prepare Outbound Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "inventory",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "item_name",
+              "keyValue": "={{ $json.item_name }}"
+            }
+          ]
+        }
+      },
+      "id": "69ff9b3c-30c5-462d-a67e-0f5008529863",
+      "name": "Get Current Stock for Outbound",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        448,
+        416
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "IpL5LE8KCjPQexZz",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $(\"Get Current Stock for Outbound\").item.json.stock_level ?? 0 }}",
+              "rightValue": "={{ $(\"Prepare Outbound Data\").item.json.quantity }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              },
+              "id": "9d9e2c85-8ec9-409c-95ef-0f417262136e"
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "bbc3c08d-a511-4e6b-934f-985d39fe59af",
+      "name": "Check Sufficient Stock",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "inventory",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "item_name",
+              "condition": "eq",
+              "keyValue": "={{ $(\"Get Current Stock for Outbound\").item.json.item_name }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "stock_level",
+              "fieldValue": "={{ Math.max(0, ($(\"Get Current Stock for Outbound\").item.json.stock_level ?? 0) - $(\"Prepare Outbound Data\").item.json.quantity) }}"
+            }
+          ]
+        }
+      },
+      "id": "055734cb-e34e-41b1-ad75-313fa805e464",
+      "name": "Update Stock Level Outbound",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        320
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "IpL5LE8KCjPQexZz",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "order_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "item_name",
+              "fieldValue": "={{ $(\"Prepare Outbound Data\").item.json.item_name }}"
+            },
+            {
+              "fieldId": "action (inbound/outbound)",
+              "fieldValue": "outbound"
+            },
+            {
+              "fieldId": "id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "timestamp",
+              "fieldValue": "={{ $(\"Prepare Outbound Data\").item.json.timestamp }}"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "={{ $json.category }}"
+            },
+            {
+              "fieldId": "price",
+              "fieldValue": "={{ $json.price }}"
+            }
+          ]
+        }
+      },
+      "id": "cdff29d0-1c7e-441c-ad70-787dfc7d31fe",
+      "name": "Log Outbound Operation",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        320
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "IpL5LE8KCjPQexZz",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $(\"Update Stock Level Outbound\").item.json.stock_level }}",
+              "rightValue": "={{ $(\"Get Current Stock for Outbound\").item.json.reorder_point }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              },
+              "id": "0298a505-720f-4e61-9c85-216119821cf1"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "dd1cc5fe-ea85-4844-9e4d-9bcfde640bcc",
+      "name": "Check Reorder Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Outbound operation completed - REORDER NEEDED\", \"item_name\": $(\"Prepare Outbound Data\").item.json.item_name, \"quantity_removed\": $(\"Prepare Outbound Data\").item.json.quantity, \"new_stock_level\": $(\"Update Stock Level Outbound\").item.json.stock_level, \"reorder_point\": $(\"Get Current Stock for Outbound\").item.json.reorder_point, \"alert\": \"Stock below reorder point\" } }}",
+        "options": {}
+      },
+      "id": "0bbe085b-49cd-45f5-9860-1589bc24067d",
+      "name": "Respond with Reorder Alert",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Outbound operation completed\", \"item_name\": $(\"Prepare Outbound Data\").item.json.item_name, \"quantity_removed\": $(\"Prepare Outbound Data\").item.json.quantity, \"new_stock_level\": $(\"Update Stock Level Outbound\").item.json.stock_level } }}",
+        "options": {}
+      },
+      "id": "f6b9d6d4-db17-4298-9e8c-9a6e08278366",
+      "name": "Respond Outbound Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"error\": \"Insufficient stock\", \"item_name\": $(\"Prepare Outbound Data\").item.json.item_name, \"requested_quantity\": $(\"Prepare Outbound Data\").item.json.quantity, \"available_stock\": $(\"Get Current Stock for Outbound\").item.json.stock_level ?? 0 } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "07b3ae77-19fd-4a0d-a0c4-197f873dbb42",
+      "name": "Respond Insufficient Stock",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "warehouse-inventory",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4f3c0174-76fa-4968-ac10-44a8fb6f877c",
+      "name": "Inventory Operations Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        416
+      ],
+      "webhookId": "47be127a-d9e8-464c-85d5-aaf91ba3b73d"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prepare Outbound Data": {
+      "main": [
+        [
+          {
+            "node": "Get Current Stock for Outbound",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Current Stock for Outbound": {
+      "main": [
+        [
+          {
+            "node": "Check Sufficient Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Sufficient Stock": {
+      "main": [
+        [
+          {
+            "node": "Update Stock Level Outbound",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Insufficient Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Stock Level Outbound": {
+      "main": [
+        [
+          {
+            "node": "Log Outbound Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Outbound Operation": {
+      "main": [
+        [
+          {
+            "node": "Check Reorder Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Reorder Needed": {
+      "main": [
+        [
+          {
+            "node": "Respond with Reorder Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Outbound Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inventory Operations Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Outbound Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f4d9d402-2152-49e8-9bcc-4d055cd56867",
+  "meta": {
+    "instanceId": "065a8777d7a5ad284d960dc01e271936effce2dfb56aac10dbd8d27aab25fdc3"
+  },
+  "id": "bCzJpHwbLYWD9SEl",
+  "tags": []
+}
