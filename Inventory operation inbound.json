@@ -163,12 +163,12 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "warehouse-inventory",
+        "path": "warehouse-inventory inbound",
         "responseMode": "responseNode",
         "options": {}
       },
       "id": "07942b63-d11a-4b8f-92a5-ecaba07775b0",
-      "name": "Inventory Operations Webhook2",
+      "name": "Inventory Operations Webhook inbound ",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
@@ -224,7 +224,7 @@
         ]
       ]
     },
-    "Inventory Operations Webhook2": {
+    "Inventory Operations Webhook inbound ": {
       "main": [
         [
           {
@@ -236,12 +236,12 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "5471cdad-a30c-4e50-a081-4ef1b5702bd6",
+  "versionId": "e0c3e3bb-d3c5-4d9e-9e06-7b76fba2c1eb",
   "meta": {
     "instanceId": "065a8777d7a5ad284d960dc01e271936effce2dfb56aac10dbd8d27aab25fdc3"
   },
