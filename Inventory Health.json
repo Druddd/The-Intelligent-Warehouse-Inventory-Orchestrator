@@ -3,22 +3,6 @@
   "nodes": [
     {
       "parameters": {
-        "path": "warehouse-inventory",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "b4e89830-c529-4442-bf42-ac58f8a50635",
-      "name": "Inventory Operations Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        0,
-        736
-      ],
-      "webhookId": "47be127a-d9e8-464c-85d5-aaf91ba3b73d"
-    },
-    {
-      "parameters": {
         "operation": "getAll",
         "tableId": "inventory",
         "returnAll": true,
@@ -54,21 +38,26 @@
         448,
         736
       ]
+    },
+    {
+      "parameters": {
+        "path": "warehouse-inventoryhealth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b4e89830-c529-4442-bf42-ac58f8a50635",
+      "name": "Inventory Operations Webhook health",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        736
+      ],
+      "webhookId": "47be127a-d9e8-464c-85d5-aaf91ba3b73d"
     }
   ],
   "pinData": {},
   "connections": {
-    "Inventory Operations Webhook": {
-      "main": [
-        [
-          {
-            "node": "Get Low Stock Items",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Get Low Stock Items": {
       "main": [
         [
@@ -79,14 +68,25 @@
           }
         ]
       ]
+    },
+    "Inventory Operations Webhook health": {
+      "main": [
+        [
+          {
+            "node": "Get Low Stock Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "f94b2245-a4c2-43ce-a1af-ee408df73587",
+  "versionId": "cb86480b-37b9-464f-af28-63583df9e952",
   "meta": {
     "instanceId": "065a8777d7a5ad284d960dc01e271936effce2dfb56aac10dbd8d27aab25fdc3"
   },
